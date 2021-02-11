@@ -4229,7 +4229,7 @@ func TestProvisionWithMigration(t *testing.T) {
 
 			var capturedContext context.Context
 			if tc.expectMigratedLabel {
-				controllerServer.EXPECT().CreateVolume(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req csi.DeleteVolumeRequest) {
+				controllerServer.EXPECT().CreateVolume(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req csi.CreateVolumeRequest) {
 					capturedContext = ctx
 				})
 			}
