@@ -4228,12 +4228,6 @@ func TestProvisionWithMigration(t *testing.T) {
 			).AnyTimes()
 
 			var capturedContext context.Context
-			if tc.expectMigratedLabel {
-				controllerServer.EXPECT().CreateVolume(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
-					capturedContext = ctx
-				}).Times(1)
-			}
-
 			if !tc.expectErr {
 				// Set an expectation that the Create should be called
 				expectParams := map[string]string{"fstype": "ext3"} // Default
@@ -4250,7 +4244,11 @@ func TestProvisionWithMigration(t *testing.T) {
 						CapacityRange: &csi.CapacityRange{
 							RequiredBytes: int64(requestBytes),
 						},
-					}).Return(
+					}).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
+					if tc.expectMigratedLabel {
+						capturedContext = ctx
+					}
+				}).Return(
 					&csi.CreateVolumeResponse{
 						Volume: &csi.Volume{
 							CapacityBytes: requestBytes,
