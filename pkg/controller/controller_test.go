@@ -4247,6 +4247,7 @@ func TestProvisionWithMigration(t *testing.T) {
 					}).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
 					if tc.expectMigratedLabel {
 						capturedContext = ctx
+						t.Logf("The context has been captured and it's value is %v", capturedContext.Value(connection.AdditionalInfoKey))
 					}
 				}).Return(
 					&csi.CreateVolumeResponse{
@@ -4297,7 +4298,7 @@ func TestProvisionWithMigration(t *testing.T) {
 				t.Errorf("Got no migrated label in context, expected migrated label")
 			}
 			if expectedLabel, actualLabel := strconv.FormatBool(tc.expectMigratedLabel), capturedContext.Value(connection.AdditionalInfoKey); expectedLabel != actualLabel {
-				t.Errorf("The value of migrated label is %v, expected %v", expectedLabel, actualLabel)
+				t.Errorf("The value of migrated label is %v, expected %v", actualLabel, expectedLabel)
 			}
 		})
 
