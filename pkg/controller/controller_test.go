@@ -4131,17 +4131,19 @@ func TestProvisionWithMigration(t *testing.T) {
 
 	deletePolicy := v1.PersistentVolumeReclaimDelete
 	testcases := []struct {
-		name              string
-		scProvisioner     string
-		annotation        map[string]string
-		expectTranslation bool
-		expectErr         bool
+		name                string
+		scProvisioner       string
+		annotation          map[string]string
+		expectTranslation   bool
+		expectMigratedLabel bool
+		expectErr           bool
 	}{
 		{
-			name:              "provision with migration on",
-			scProvisioner:     inTreePluginName,
-			annotation:        map[string]string{annStorageProvisioner: driverName},
-			expectTranslation: true,
+			name:                "provision with migration on",
+			scProvisioner:       inTreePluginName,
+			annotation:          map[string]string{annStorageProvisioner: driverName},
+			expectTranslation:   true,
+			expectMigratedLabel: true,
 		},
 		{
 			name:              "provision without migration for native CSI",
@@ -4150,10 +4152,11 @@ func TestProvisionWithMigration(t *testing.T) {
 			expectTranslation: false,
 		},
 		{
-			name:              "provision with migration for migrated-to CSI",
-			scProvisioner:     inTreePluginName,
-			annotation:        map[string]string{annStorageProvisioner: inTreePluginName, annMigratedTo: driverName},
-			expectTranslation: true,
+			name:                "provision with migration for migrated-to CSI",
+			scProvisioner:       inTreePluginName,
+			annotation:          map[string]string{annStorageProvisioner: inTreePluginName, annMigratedTo: driverName},
+			expectTranslation:   true,
+			expectMigratedLabel: true,
 		},
 		{
 			name:          "provision with migration-to some random driver",
@@ -4224,6 +4227,13 @@ func TestProvisionWithMigration(t *testing.T) {
 				},
 			).AnyTimes()
 
+			var capturedContext context.Context
+			if tc.expectMigratedLabel {
+				controllerServer.EXPECT().CreateVolume(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req csi.DeleteVolumeRequest) {
+					capturedContext = ctx
+				})
+			}
+
 			if !tc.expectErr {
 				// Set an expectation that the Create should be called
 				expectParams := map[string]string{"fstype": "ext3"} // Default
@@ -4284,6 +4294,13 @@ func TestProvisionWithMigration(t *testing.T) {
 					t.Errorf("got translated annotation %s on the pv, expected PV not to be translated to in-tree", translatedKey)
 				}
 			}
+
+			if tc.expectMigratedLabel && (capturedContext == nil || capturedContext.Value(connection.AdditionalInfoKey) == nil) {
+				t.Errorf("Got no migrated label in context, expected migrated label")
+			}
+			if expectedLabel, actualLabel := strconv.FormatBool(tc.expectMigratedLabel), capturedContext.Value(connection.AdditionalInfoKey); expectedLabel != actualLabel {
+				t.Errorf("The value of migrated label is %v, expected %v", expectedLabel, actualLabel)
+			}
 		})
 
 	}
@@ -4314,18 +4331,20 @@ func TestDeleteMigration(t *testing.T) {
 	)
 
 	testCases := []struct {
-		name              string
-		pv                *v1.PersistentVolume
-		expectTranslation bool
-		expectErr         bool
+		name                string
+		pv                  *v1.PersistentVolume
+		expectTranslation   bool
+		expectMigratedLabel bool
+		expectErr           bool
 	}{
 		{
 			name: "normal migration",
 			// The PV could be any random in-tree plugin - it doesn't really
 			// matter here. We only care that the translation is called and the
 			// function will work after some CSI volume is created
-			pv:                &v1.PersistentVolume{},
-			expectTranslation: true,
+			pv:                  &v1.PersistentVolume{},
+			expectTranslation:   true,
+			expectMigratedLabel: true,
 		},
 		{
 			name: "no migration",
@@ -4369,6 +4388,13 @@ func TestDeleteMigration(t *testing.T) {
 				mockTranslator.EXPECT().TranslateInTreePVToCSI(gomock.Any()).Return(createFakeCSIPV(translatedHandle), nil).AnyTimes()
 			}
 
+			var capturedContext context.Context
+			if tc.expectMigratedLabel {
+				controllerServer.EXPECT().DeleteVolume(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req csi.DeleteVolumeRequest) {
+					capturedContext = ctx
+				})
+			}
+
 			volID := normalHandle
 			if tc.expectTranslation {
 				volID = translatedHandle
@@ -4388,6 +4414,12 @@ func TestDeleteMigration(t *testing.T) {
 			}
 			if !tc.expectErr && err != nil {
 				t.Errorf("Got error: %v, expected none", err)
+			}
+			if tc.expectMigratedLabel && (capturedContext == nil || capturedContext.Value(connection.AdditionalInfoKey) == nil) {
+				t.Errorf("Got no migrated label in context, expected migrated label")
+			}
+			if expectedLabel, actualLabel := strconv.FormatBool(tc.expectMigratedLabel), capturedContext.Value(connection.AdditionalInfoKey); expectedLabel != actualLabel {
+				t.Errorf("The value of migrated label is %v, expected %v", expectedLabel, actualLabel)
 			}
 		})
 
