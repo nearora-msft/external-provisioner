@@ -4231,7 +4231,7 @@ func TestProvisionWithMigration(t *testing.T) {
 			if tc.expectMigratedLabel {
 				controllerServer.EXPECT().CreateVolume(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
 					capturedContext = ctx
-				})
+				}).Times(1)
 			}
 
 			if !tc.expectErr {
@@ -4392,7 +4392,7 @@ func TestDeleteMigration(t *testing.T) {
 			if tc.expectMigratedLabel {
 				controllerServer.EXPECT().DeleteVolume(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req *csi.DeleteVolumeRequest) {
 					capturedContext = ctx
-				})
+				}).Times(1)
 			}
 
 			volID := normalHandle
