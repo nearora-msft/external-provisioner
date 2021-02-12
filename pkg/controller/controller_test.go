@@ -4145,11 +4145,11 @@ func TestProvisionWithMigration(t *testing.T) {
 		expectErr           bool
 	}{
 		{
-			name:                "provision with migration on",
-			scProvisioner:       inTreePluginName,
-			annotation:          map[string]string{annStorageProvisioner: driverName},
-			expectTranslation:   true,
-			expectMigratedLabel: true,
+			name:              "provision with migration on",
+			scProvisioner:     inTreePluginName,
+			annotation:        map[string]string{annStorageProvisioner: driverName},
+			expectTranslation: true,
+			//expectMigratedLabel: true,
 		},
 		{
 			name:              "provision without migration for native CSI",
@@ -4158,11 +4158,11 @@ func TestProvisionWithMigration(t *testing.T) {
 			expectTranslation: false,
 		},
 		{
-			name:                "provision with migration for migrated-to CSI",
-			scProvisioner:       inTreePluginName,
-			annotation:          map[string]string{annStorageProvisioner: inTreePluginName, annMigratedTo: driverName},
-			expectTranslation:   true,
-			expectMigratedLabel: true,
+			name:              "provision with migration for migrated-to CSI",
+			scProvisioner:     inTreePluginName,
+			annotation:        map[string]string{annStorageProvisioner: inTreePluginName, annMigratedTo: driverName},
+			expectTranslation: true,
+			//expectMigratedLabel: true,
 		},
 		{
 			name:          "provision with migration-to some random driver",
@@ -4347,9 +4347,9 @@ func TestDeleteMigration(t *testing.T) {
 			// The PV could be any random in-tree plugin - it doesn't really
 			// matter here. We only care that the translation is called and the
 			// function will work after some CSI volume is created
-			pv:                  &v1.PersistentVolume{},
-			expectTranslation:   true,
-			expectMigratedLabel: true,
+			pv:                &v1.PersistentVolume{},
+			expectTranslation: true,
+			//expectMigratedLabel: true,
 		},
 		{
 			name: "no migration",
