@@ -4227,6 +4227,7 @@ func TestProvisionWithMigration(t *testing.T) {
 				},
 			).AnyTimes()
 
+			var migrated string
 			if !tc.expectErr {
 				// Set an expectation that the Create should be called
 				expectParams := map[string]string{"fstype": "ext3"} // Default
@@ -4235,7 +4236,6 @@ func TestProvisionWithMigration(t *testing.T) {
 					// is called on the expected volume with a translated param
 					expectParams[translatedKey] = "foo"
 				}
-				var migrated string
 				controllerServer.EXPECT().CreateVolume(gomock.Any(),
 					&csi.CreateVolumeRequest{
 						Name:               "test-testi",
@@ -4251,7 +4251,7 @@ func TestProvisionWithMigration(t *testing.T) {
 						if !ok {
 							klog.Errorf("Failed to record migrated status, cannot convert additional info %v", additionalInfo)
 						}
-						migrated = additionalInfoVal.Migrated
+						migrated := additionalInfoVal.Migrated
 						t.Logf("The context has been captured and it's value is %v", migrated)
 					}
 				}).Return(
@@ -4299,9 +4299,9 @@ func TestProvisionWithMigration(t *testing.T) {
 				}
 			}
 
-			// if strconv.FormatBool(tc.expectMigratedLabel) != migrated {
-			// 	t.Errorf("Got no migrated label in context, expected migrated label")
-			// }
+			if strconv.FormatBool(tc.expectMigratedLabel) != migrated {
+				t.Errorf("Got no migrated label in context, expected migrated label")
+			}
 			// if expectedLabel, actualLabel := strconv.FormatBool(tc.expectMigratedLabel), capturedContext.Value(connection.AdditionalInfoKey); expectedLabel != actualLabel {
 			// 	t.Errorf("The value of migrated label is %v, expected %v", actualLabel, expectedLabel)
 			// }
