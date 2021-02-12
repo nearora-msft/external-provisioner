@@ -4247,7 +4247,7 @@ func TestProvisionWithMigration(t *testing.T) {
 					}).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
 					if tc.expectMigratedLabel {
 						capturedContext = ctx
-						t.Logf("The context has been captured and it's value is %v", capturedContext.Value(connection.AdditionalInfoKey))
+						t.Logf("The context has been captured and it's value is %v", capturedContext.Value("TestKey"))
 					}
 				}).Return(
 					&csi.CreateVolumeResponse{
