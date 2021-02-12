@@ -727,9 +727,9 @@ func (p *csiProvisioner) Provision(ctx context.Context, options controller.Provi
 	pvName := req.Name
 	provisionerCredentials := req.Secrets
 
-	//createCtx := markAsMigrated(ctx, result.migratedVolume)
-	createCtxNew := context.WithValue(ctx, "TestKey", "TestValue")
-	createCtx, cancel := context.WithTimeout(createCtxNew, p.timeout)
+	createCtx := markAsMigrated(ctx, result.migratedVolume)
+	//createCtxNew := context.WithValue(ctx, "TestKey", "TestValue")
+	createCtx, cancel := context.WithTimeout(createCtx, p.timeout)
 	defer cancel()
 	klog.V(5).Infof("CreateVolumeRequest %+v", req)
 	rep, err := p.csiClient.CreateVolume(createCtx, req)

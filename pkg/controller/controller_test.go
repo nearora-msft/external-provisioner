@@ -1100,12 +1100,6 @@ func TestProvision(t *testing.T) {
 				if fmt.Sprintf("%v", req.Parameters) != fmt.Sprintf("%v", expectedParams) { // only pvc name/namespace left
 					t.Errorf("Unexpected parameters: %v", req.Parameters)
 				}
-				if ctx.Value("TestKey") != "TestValue" {
-					t.Errorf("Unexpected context value: %v", ctx.Value("TestKey"))
-				}
-				if ctx.Value("TestKey") == "TestValue" {
-					t.Errorf("Unexpected context value: %v", ctx.Value("TestKey"))
-				}
 			},
 			expectState: controller.ProvisioningFinished,
 		},
@@ -4145,11 +4139,11 @@ func TestProvisionWithMigration(t *testing.T) {
 		expectErr           bool
 	}{
 		{
-			name:              "provision with migration on",
-			scProvisioner:     inTreePluginName,
-			annotation:        map[string]string{annStorageProvisioner: driverName},
-			expectTranslation: true,
-			//expectMigratedLabel: true,
+			name:                "provision with migration on",
+			scProvisioner:       inTreePluginName,
+			annotation:          map[string]string{annStorageProvisioner: driverName},
+			expectTranslation:   true,
+			expectMigratedLabel: true,
 		},
 		{
 			name:              "provision without migration for native CSI",
@@ -4233,7 +4227,6 @@ func TestProvisionWithMigration(t *testing.T) {
 				},
 			).AnyTimes()
 
-			var capturedContext context.Context
 			if !tc.expectErr {
 				// Set an expectation that the Create should be called
 				expectParams := map[string]string{"fstype": "ext3"} // Default
@@ -4242,6 +4235,7 @@ func TestProvisionWithMigration(t *testing.T) {
 					// is called on the expected volume with a translated param
 					expectParams[translatedKey] = "foo"
 				}
+				var migrated string
 				controllerServer.EXPECT().CreateVolume(gomock.Any(),
 					&csi.CreateVolumeRequest{
 						Name:               "test-testi",
@@ -4252,8 +4246,13 @@ func TestProvisionWithMigration(t *testing.T) {
 						},
 					}).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
 					if tc.expectMigratedLabel {
-						capturedContext = ctx
-						t.Logf("The context has been captured and it's value is %v", capturedContext.Value("TestKey"))
+						additionalInfo := ctx.Value(connection.AdditionalInfoKey)
+						additionalInfoVal, ok := additionalInfo.(connection.AdditionalInfo)
+						if !ok {
+							klog.Errorf("Failed to record migrated status, cannot convert additional info %v", additionalInfo)
+						}
+						migrated = additionalInfoVal.Migrated
+						t.Logf("The context has been captured and it's value is %v", migrated)
 					}
 				}).Return(
 					&csi.CreateVolumeResponse{
@@ -4300,9 +4299,9 @@ func TestProvisionWithMigration(t *testing.T) {
 				}
 			}
 
-			if tc.expectMigratedLabel && (capturedContext == nil || capturedContext.Value(connection.AdditionalInfoKey) == nil) {
-				t.Errorf("Got no migrated label in context, expected migrated label")
-			}
+			// if strconv.FormatBool(tc.expectMigratedLabel) != migrated {
+			// 	t.Errorf("Got no migrated label in context, expected migrated label")
+			// }
 			// if expectedLabel, actualLabel := strconv.FormatBool(tc.expectMigratedLabel), capturedContext.Value(connection.AdditionalInfoKey); expectedLabel != actualLabel {
 			// 	t.Errorf("The value of migrated label is %v, expected %v", actualLabel, expectedLabel)
 			// }
