@@ -1103,6 +1103,9 @@ func TestProvision(t *testing.T) {
 				if ctx.Value("TestKey") != "TestValue" {
 					t.Errorf("Unexpected context value: %v", ctx.Value("TestKey"))
 				}
+				if ctx.Value("TestKey") == "TestValue" {
+					t.Errorf("Unexpected context value: %v", ctx.Value("TestKey"))
+				}
 			},
 			expectState: controller.ProvisioningFinished,
 		},
