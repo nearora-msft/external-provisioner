@@ -1100,6 +1100,7 @@ func TestProvision(t *testing.T) {
 				if fmt.Sprintf("%v", req.Parameters) != fmt.Sprintf("%v", expectedParams) { // only pvc name/namespace left
 					t.Errorf("Unexpected parameters: %v", req.Parameters)
 				}
+				t.Logf("The test context has been captured and it's value is %v", ctx.Value("TestKey"))
 			},
 			expectState: controller.ProvisioningFinished,
 		},
