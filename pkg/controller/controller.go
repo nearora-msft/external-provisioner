@@ -727,12 +727,12 @@ func (p *csiProvisioner) Provision(ctx context.Context, options controller.Provi
 	pvName := req.Name
 	provisionerCredentials := req.Secrets
 
-	createCtx := markAsMigrated(ctx, result.migratedVolume)
+	//createCtx := markAsMigrated(ctx, result.migratedVolume)
 	createCtxNew := context.WithValue(ctx, "TestKey", "TestValue")
 	createCtx, cancel := context.WithTimeout(createCtxNew, p.timeout)
 	defer cancel()
 	klog.V(5).Infof("CreateVolumeRequest %+v", req)
-	rep, err := p.csiClient.CreateVolume(createCtxNew, req)
+	rep, err := p.csiClient.CreateVolume(createCtx, req)
 
 	if err != nil {
 		// Giving up after an error and telling the pod scheduler to retry with a different node
