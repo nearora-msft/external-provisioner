@@ -4246,11 +4246,12 @@ func TestProvisionWithMigration(t *testing.T) {
 						},
 					}).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
 					if tc.expectMigratedLabel {
-						additionalInfo := ctx.Value(connection.AdditionalInfoKey)
+						additionalInfo := ctx.Value(AdditionalInfoKeyTest)
 						if additionalInfo == nil {
 							t.Logf("The value of context key is nil")
+							t.Logf("The value of volumeName is %v", req.Name)
 						}
-						additionalInfoVal, ok := additionalInfo.(connection.AdditionalInfo)
+						additionalInfoVal, ok := additionalInfo.(AdditionalInfoTest)
 						if !ok {
 							klog.Errorf("Failed to record migrated status, cannot convert additional info %v", additionalInfo)
 						}
