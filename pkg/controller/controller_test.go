@@ -4236,15 +4236,7 @@ func TestProvisionWithMigration(t *testing.T) {
 					// is called on the expected volume with a translated param
 					expectParams[translatedKey] = "foo"
 				}
-				controllerServer.EXPECT().CreateVolume(gomock.Any(),
-					&csi.CreateVolumeRequest{
-						Name:               "test-testi",
-						Parameters:         expectParams,
-						VolumeCapabilities: nil,
-						CapacityRange: &csi.CapacityRange{
-							RequiredBytes: int64(requestBytes),
-						},
-					}).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
+				controllerServer.EXPECT().CreateVolume(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
 					if tc.expectMigratedLabel {
 						additionalInfo := ctx.Value(AdditionalInfoKeyTest)
 						if additionalInfo == nil {
