@@ -4139,11 +4139,11 @@ func TestProvisionWithMigration(t *testing.T) {
 		expectErr           bool
 	}{
 		{
-			name:                "provision with migration on",
-			scProvisioner:       inTreePluginName,
-			annotation:          map[string]string{annStorageProvisioner: driverName},
-			expectTranslation:   true,
-			expectMigratedLabel: true,
+			name:              "provision with migration on",
+			scProvisioner:     inTreePluginName,
+			annotation:        map[string]string{annStorageProvisioner: driverName},
+			expectTranslation: true,
+			//expectMigratedLabel: true,
 		},
 		{
 			name:              "provision without migration for native CSI",
@@ -4236,7 +4236,15 @@ func TestProvisionWithMigration(t *testing.T) {
 					// is called on the expected volume with a translated param
 					expectParams[translatedKey] = "foo"
 				}
-				controllerServer.EXPECT().CreateVolume(gomock.Any(), gomock.Any()).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
+				controllerServer.EXPECT().CreateVolume(gomock.Any(),
+					&csi.CreateVolumeRequest{
+						Name:               "test-testi",
+						Parameters:         expectParams,
+						VolumeCapabilities: nil,
+						CapacityRange: &csi.CapacityRange{
+							RequiredBytes: int64(requestBytes),
+						},
+					}).Do(func(ctx context.Context, req *csi.CreateVolumeRequest) {
 					if tc.expectMigratedLabel {
 						additionalInfo := ctx.Value(AdditionalInfoKeyTest)
 						if additionalInfo == nil {
@@ -4424,6 +4432,23 @@ func TestDeleteMigration(t *testing.T) {
 		})
 
 	}
+}
+
+func TestMarkAsMigrated(t *testing.T) {
+	t.Run("context has the migrated label for the migratable plugins", func(t *testing.T) {
+		ctx := context.Background()
+		migratedCtx := markAsMigrated(ctx, true)
+		additionalInfo := migratedCtx.Value(connection.AdditionalInfoKey)
+		if additionalInfo == nil {
+			t.Errorf("test: %s, no migrated label found in the context", t.Name())
+		}
+		additionalInfoVal := additionalInfo.(connection.AdditionalInfo)
+		migrated := additionalInfoVal.Migrated
+
+		if migrated != "true" {
+			t.Errorf("test: %s, expected: %v, got: %v", t.Name(), "true", migrated)
+		}
+	})
 }
 
 func createFakeCSIPV(volumeHandle string) *v1.PersistentVolume {
