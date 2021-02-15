@@ -4227,7 +4227,7 @@ func TestProvisionWithMigration(t *testing.T) {
 				},
 			).AnyTimes()
 
-			var migrated string
+			//var migrated string
 			if !tc.expectErr {
 				// Set an expectation that the Create should be called
 				expectParams := map[string]string{"fstype": "ext3"} // Default
